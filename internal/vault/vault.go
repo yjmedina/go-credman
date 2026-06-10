@@ -1,33 +1,21 @@
-package store
+package vault
+
+import "credman/internal/crypto"
 
 type VaultID string
 
-func serializeCredentials(creds Credentials) ([]byte, error) {
-	return nil, nil
+// LockedVault contains the encrypted Data Encryption Key (DEK) to encrypt data
+type LockedVault struct {
+	ID         VaultID
+	KDFParams  crypto.KDFParams
+	WrappedDEK []byte
 }
 
-func deserializeCredentials(data []byte) (*Credentials, error) {
-	return nil, nil
-}
-
-type EncryptedCredential struct {
-	ID         CredentialID
-	VaultID    VaultID
-	ciphertext []byte
-}
-
-type CredentialRepository interface {
-	save(creds EncryptedCredential) error
-	get(id CredentialID) (*EncryptedCredential, error)
-	delete(id CredentialID) error
-	update(creds EncryptedCredential) error
-}
-
-// Vault contains the encrypted Data Encryption Key (DEK) to encrypt data
+// UnlockedVault contains the encrypted Data Encryption Key (DEK) to encrypt data
 type UnlockedVault struct {
 	ID         VaultID
 	dek        []byte
-	cipher     Cipher
+	cipher     crypto.Cipher
 	repository CredentialRepository
 }
 

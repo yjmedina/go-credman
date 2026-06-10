@@ -1,4 +1,4 @@
-package store
+package vault
 
 import "time"
 
@@ -18,4 +18,18 @@ type Credentials struct {
 	Fields    []Field
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type EncryptedCredential struct {
+	ID         CredentialID
+	VaultID    VaultID
+	ciphertext []byte
+}
+
+func serializeCredentials(creds Credentials) ([]byte, error) {
+	return nil, nil
+}
+
+func deserializeCredentials(data []byte) (*Credentials, error) {
+	return nil, nil
 }
