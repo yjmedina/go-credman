@@ -10,5 +10,7 @@ type CredentialRepository interface {
 type VaultRepository interface {
 	save(vault LockedVault) error
 	get(id VaultID) (*LockedVault, error)
+	getDefault() VaultID
+	setDefault(id VaultID) error
 	delete(id VaultID) error
 }

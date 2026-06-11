@@ -65,3 +65,25 @@ func (m *VaultManager) DeleteVault(id VaultID) error {
 	return m.vaultRepo.delete(id)
 
 }
+
+func (m *VaultManager) GetDefaultVault() (*LockedVault, error) {
+	defaultID := m.vaultRepo.getDefault()
+	return m.vaultRepo.get(defaultID)
+}
+
+func (m *VaultManager) Init(password []byte) error {
+	// Check if default vault already exists
+	defaultID := m.vaultRepo.getDefault()
+	// already exists
+	if defaultID != "" {
+		return nil
+	}
+	// create Default vault
+	defaultVault, err := m.CreateVault(password)
+	if err != nil {
+		return err
+	}
+	// set default vault
+	m.vaultRepo.setDefault(defaultVault.ID)
+	return nil
+}
