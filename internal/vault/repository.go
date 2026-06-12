@@ -1,16 +1,16 @@
 package vault
 
 type CredentialRepository interface {
-	save(creds EncryptedCredential) error
-	get(id CredentialID) (*EncryptedCredential, error)
-	delete(id CredentialID) error
-	update(creds EncryptedCredential) error
+	SaveCredential(creds EncryptedCredential) error
+	GetCredential(id CredentialID) (*EncryptedCredential, error)
+	UpdateCredential(creds EncryptedCredential) error
+	DeleteCredential(id CredentialID) error
 }
 
 type VaultRepository interface {
-	save(vault LockedVault) error
-	get(id VaultID) (*LockedVault, error)
-	getDefault() VaultID
-	setDefault(id VaultID) error
-	delete(id VaultID) error
+	SaveVault(vault LockedVault) error
+	GetVault(id VaultID) (*LockedVault, error)
+	GetDefaultVault() (VaultID, error)
+	SetDefaultVault(id VaultID) error
+	DeleteVault(id VaultID) error
 }

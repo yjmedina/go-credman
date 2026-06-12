@@ -24,6 +24,7 @@ type EncryptedCredential struct {
 	ID         CredentialID
 	VaultID    VaultID
 	ciphertext []byte
+	UpdatedAt  time.Time
 }
 
 func serializeCredentials(creds Credentials) ([]byte, error) {

@@ -35,13 +35,14 @@ func (v *UnlockedVault) Save(creds Credentials) error {
 		ID:         creds.ID,
 		VaultID:    v.ID,
 		ciphertext: ciphertext,
+		UpdatedAt:  creds.UpdatedAt,
 	}
 
-	return v.repository.save(encryptedCreds)
+	return v.repository.SaveCredential(encryptedCreds)
 }
 
 func (v *UnlockedVault) Get(id CredentialID) (*Credentials, error) {
-	encryptedCreds, err := v.repository.get(id)
+	encryptedCreds, err := v.repository.GetCredential(id)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +55,7 @@ func (v *UnlockedVault) Get(id CredentialID) (*Credentials, error) {
 }
 
 func (v *UnlockedVault) Delete(id CredentialID) error {
-	return v.repository.delete(id)
+	return v.repository.DeleteCredential(id)
 }
 
 func (v *UnlockedVault) Update(id CredentialID, fields []Field) error {

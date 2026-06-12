@@ -29,7 +29,7 @@ func (m *VaultManager) CreateVault(password []byte) (*LockedVault, error) {
 		WrappedDEK: wrappedDEK,
 	}
 
-	err = m.vaultRepo.save(vault)
+	err = m.vaultRepo.SaveVault(vault)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (m *VaultManager) CreateVault(password []byte) (*LockedVault, error) {
 
 }
 func (m *VaultManager) UnlockVault(id VaultID, password []byte) (*UnlockedVault, error) {
-	lockedVault, err := m.vaultRepo.get(id)
+	lockedVault, err := m.vaultRepo.GetVault(id)
 	if err != nil {
 		return nil, err
 	}
@@ -62,20 +62,23 @@ func (m *VaultManager) UnlockVault(id VaultID, password []byte) (*UnlockedVault,
 }
 
 func (m *VaultManager) DeleteVault(id VaultID) error {
-	return m.vaultRepo.delete(id)
+	return m.vaultRepo.DeleteVault(id)
 
 }
 
 func (m *VaultManager) GetDefaultVault() (*LockedVault, error) {
-	defaultID := m.vaultRepo.getDefault()
-	return m.vaultRepo.get(defaultID)
+	defaultID, err := m.vaultRepo.GetDefaultVault()
+	if err != nil {
+		return nil, err
+	}
+	return m.vaultRepo.GetVault(defaultID)
 }
 
 func (m *VaultManager) Init(password []byte) error {
 	// Check if default vault already exists
-	defaultID := m.vaultRepo.getDefault()
+	_, err := m.vaultRepo.GetDefaultVault()
 	// already exists
-	if defaultID != "" {
+	if err != nil {
 		return nil
 	}
 	// create Default vault
@@ -84,6 +87,6 @@ func (m *VaultManager) Init(password []byte) error {
 		return err
 	}
 	// set default vault
-	m.vaultRepo.setDefault(defaultVault.ID)
+	m.vaultRepo.SetDefaultVault(defaultVault.ID)
 	return nil
 }
