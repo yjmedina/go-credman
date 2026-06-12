@@ -266,6 +266,12 @@ func ResolvePath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("resolving home dir: %w", err)
 	}
-	path := filepath.Join(home, ".credman", ".credman.db")
+
+	dir := filepath.Join(home, ".credman")
+	err = os.MkdirAll(dir, 0700)
+	if err != nil {
+		return "", fmt.Errorf("create %s: %w", dir, err)
+	}
+	path := filepath.Join(dir, ".credman.db")
 	return path, nil
 }
