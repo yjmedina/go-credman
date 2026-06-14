@@ -104,6 +104,19 @@ func (v *UnlockedVault) Get(id CredentialID) (*Credentials, error) {
 	return deserializeCredentials(plaintext)
 }
 
+func (v *UnlockedVault) GetByName(name string) (*Credentials, error) {
+	encryptedCreds, err := v.repository.GetCredentialByName(name)
+	if err != nil {
+		return nil, err
+	}
+	additionalData := []byte(encryptedCreds.ID)
+	plaintext, err := v.cipher.Open(v.dek, encryptedCreds.ciphertext, additionalData)
+	if err != nil {
+		return nil, err
+	}
+	return deserializeCredentials(plaintext)
+}
+
 func (v *UnlockedVault) Delete(id CredentialID) error {
 	return v.repository.DeleteCredential(id)
 }
