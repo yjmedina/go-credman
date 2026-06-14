@@ -48,11 +48,11 @@ func validateName(name *string) error {
 	return nil
 }
 
-func (v *UnlockedVault) New(newCreds NewCredential) error {
+func (v *UnlockedVault) New(newCreds NewCredential) (*Credentials, error) {
 
 	err := validateName(&newCreds.Name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	creds := Credentials{
@@ -66,13 +66,13 @@ func (v *UnlockedVault) New(newCreds NewCredential) error {
 
 	plaintext, err := serializeCredentials(creds)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	additionalData := []byte(creds.ID) // Using CredentialID as additional authenticated data
 	ciphertext, err := v.cipher.Seal(v.dek, plaintext, additionalData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	encryptedCreds := EncryptedCredential{
@@ -83,7 +83,12 @@ func (v *UnlockedVault) New(newCreds NewCredential) error {
 		UpdatedAt:  creds.UpdatedAt,
 	}
 
-	return v.repository.SaveCredential(encryptedCreds)
+	err = v.repository.SaveCredential(encryptedCreds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &creds, nil
 }
 
 func (v *UnlockedVault) Get(id CredentialID) (*Credentials, error) {
@@ -105,4 +110,8 @@ func (v *UnlockedVault) Delete(id CredentialID) error {
 
 func (v *UnlockedVault) Update(id CredentialID, fields []Field) error {
 	return nil
+}
+
+func (v *UnlockedVault) Search(pattern string) ([]string, error) {
+	return v.repository.SearchCredentials(pattern)
 }

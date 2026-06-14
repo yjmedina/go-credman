@@ -25,6 +25,8 @@ func NewRootCommand() (*cobra.Command, error) {
 	}
 
 	rootCmd.AddCommand(NewInitCmd(manager))
+	rootCmd.AddCommand(NewAddCmd(manager))
+	rootCmd.AddCommand(NewSearchCmd(manager))
 
 	return rootCmd, nil
 }

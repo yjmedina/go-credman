@@ -10,9 +10,23 @@ import (
 
 // PromptPassword reads a password from the terminal without echoing it.
 // The prompt is written to stderr so it stays out of piped stdout.
+// When stdin is not a terminal (e.g. data is being piped in for another
+// flag) it falls back to /dev/tty so the user can still respond.
 func PromptPassword(prompt string) (string, error) {
+	fd := int(os.Stdin.Fd())
+	cleanup := func() {}
+	if !term.IsTerminal(fd) {
+		tty, err := os.Open("/dev/tty")
+		if err != nil {
+			return "", fmt.Errorf("open /dev/tty: %w", err)
+		}
+		fd = int(tty.Fd())
+		cleanup = func() { tty.Close() }
+	}
+	defer cleanup()
+
 	fmt.Fprint(os.Stderr, prompt)
-	pw, err := term.ReadPassword(int(os.Stdin.Fd()))
+	pw, err := term.ReadPassword(fd)
 	fmt.Fprintln(os.Stderr)
 	if err != nil {
 		return "", fmt.Errorf("read password: %w", err)
