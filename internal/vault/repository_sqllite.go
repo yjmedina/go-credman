@@ -96,8 +96,8 @@ func (r *SqlLiteRepository) DeleteCredential(id CredentialID) error {
 
 func (r *SqlLiteRepository) SaveVault(vault LockedVault) error {
 	_, err := r.db.Exec(`
-	INSERT INTO vaults (id, wrapped_dek, salt, kdf_time, parallelism, memory, is_default) 
-	VALUES (?, ?, ?, ?, ?, ?, 0)
+	INSERT INTO vaults (id, wrapped_dek, salt, kdf_time, parallelism, memory) 
+	VALUES (?, ?, ?, ?, ?, ?)
 		`,
 		vault.ID,
 		vault.WrappedDEK,
@@ -114,13 +114,24 @@ func (r *SqlLiteRepository) SaveVault(vault LockedVault) error {
 	return nil
 }
 
-func (r *SqlLiteRepository) GetVault(id VaultID) (*LockedVault, error) {
+func (r *SqlLiteRepository) Exists() (bool, error) {
+	var numRows uint8
+	err := r.db.QueryRow(`SELECT COUNT(*) FROM vaults LIMIT 1`).Scan(&numRows)
+
+	if err != nil {
+		return false, fmt.Errorf("getting vault %s", err)
+	}
+
+	return numRows > 0, nil
+}
+
+func (r *SqlLiteRepository) GetVault() (*LockedVault, error) {
 	var v LockedVault
 	err := r.db.QueryRow(`
 	SELECT id, wrapped_dek, salt, kdf_time, parallelism, memory
 	FROM vaults
-	WHERE id=?
-	`, id).Scan(
+	LIMIT 1
+	`).Scan(
 		&v.ID,
 		&v.WrappedDEK,
 		&v.KDFParams.Salt,
@@ -129,58 +140,19 @@ func (r *SqlLiteRepository) GetVault(id VaultID) (*LockedVault, error) {
 		&v.KDFParams.Memory,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("vault does not exists %s: %w", id, err)
+		return nil, fmt.Errorf("vault does not exists %w", err)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("getting vault %s: %w", id, err)
+		return nil, fmt.Errorf("getting vault %w", err)
 	}
 
 	return &v, nil
 }
 
-func (r *SqlLiteRepository) GetDefaultVault() (VaultID, error) {
-	var id VaultID
-	err := r.db.QueryRow(`SELECT id FROM vaults WHERE is_default = 1 LIMIT 1`).Scan(&id)
-	if errors.Is(err, sql.ErrNoRows) {
-		return id, fmt.Errorf("no default vault: %w", err)
-	}
+func (r *SqlLiteRepository) DeleteVault() error {
+	result, err := r.db.Exec(`DELETE FROM vaults`)
 	if err != nil {
-		return id, fmt.Errorf("getting default vault: %w", err)
-	}
-
-	return id, nil
-}
-
-func (r *SqlLiteRepository) SetDefaultVault(id VaultID) error {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return fmt.Errorf("beginning transaction: %w", err)
-	}
-	defer tx.Rollback()
-
-	if _, err := tx.Exec(`UPDATE vaults SET is_default = 0 WHERE is_default = 1`); err != nil {
-		return fmt.Errorf("clearing previous default: %w", err)
-	}
-
-	result, err := tx.Exec(`UPDATE vaults SET is_default = 1 WHERE id = ?`, id)
-	if err != nil {
-		return fmt.Errorf("setting default vault %s: %w", id, err)
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("checking rows affected: %w", err)
-	}
-	if rows == 0 {
-		return fmt.Errorf("vault %s not found", id)
-	}
-	return tx.Commit()
-
-}
-
-func (r *SqlLiteRepository) DeleteVault(id VaultID) error {
-	result, err := r.db.Exec(`DELETE FROM vaults WHERE id = ?`, id)
-	if err != nil {
-		return fmt.Errorf("deleting vault %s: %w", id, err)
+		return fmt.Errorf("deleting vault: %w", err)
 	}
 
 	rows, err := result.RowsAffected()
@@ -188,7 +160,7 @@ func (r *SqlLiteRepository) DeleteVault(id VaultID) error {
 		return fmt.Errorf("checking rows affected: %w", err)
 	}
 	if rows == 0 {
-		return fmt.Errorf("vault %s not found", id)
+		return fmt.Errorf("no vault to delete")
 	}
 	return nil
 }
@@ -201,8 +173,7 @@ func migrate(db *sql.DB) error {
 		salt        BLOB NOT NULL,
 		kdf_time    INTEGER NOT NULL,
 		parallelism INTEGER NOT NULL,
-		memory      INTEGER NOT NULL,
-		is_default 	INTEGER NOT NULL DEFAULT 0
+		memory      INTEGER NOT NULL
 	);
 
 	CREATE TABLE IF NOT EXISTS credentials (
@@ -212,11 +183,6 @@ func migrate(db *sql.DB) error {
 		updated_at DATETIME NOT NULL
 	);
 
-	CREATE INDEX IF NOT EXISTS idx_credentials_vault_id
-		ON credentials(vault_id);
-
-	CREATE UNIQUE INDEX IF NOT EXISTS one_default_vault
-		ON vaults(is_default) WHERE is_default = 1;
 	`)
 
 	return err

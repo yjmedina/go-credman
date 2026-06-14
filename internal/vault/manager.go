@@ -44,8 +44,8 @@ func (m *VaultManager) CreateVault(password []byte) (*LockedVault, error) {
 	return &vault, nil
 
 }
-func (m *VaultManager) UnlockVault(id VaultID, password []byte) (*UnlockedVault, error) {
-	lockedVault, err := m.vaultRepo.GetVault(id)
+func (m *VaultManager) UnlockVault(password []byte) (*UnlockedVault, error) {
+	lockedVault, err := m.vaultRepo.GetVault()
 	if err != nil {
 		return nil, err
 	}
@@ -68,33 +68,26 @@ func (m *VaultManager) UnlockVault(id VaultID, password []byte) (*UnlockedVault,
 	}, nil
 }
 
-func (m *VaultManager) DeleteVault(id VaultID) error {
-	return m.vaultRepo.DeleteVault(id)
+func (m *VaultManager) DeleteVault() error {
+	return m.vaultRepo.DeleteVault()
 
 }
-
-func (m *VaultManager) GetDefaultVault() (*LockedVault, error) {
-	defaultID, err := m.vaultRepo.GetDefaultVault()
-	if err != nil {
-		return nil, err
-	}
-	return m.vaultRepo.GetVault(defaultID)
-}
-
 func (m *VaultManager) Init(password []byte) error {
 	// Check if default vault already exists
-	_, err := m.vaultRepo.GetDefaultVault()
-	// already exists
-	if err != nil {
-		return nil
-	}
-	// create Default vault
-	defaultVault, err := m.CreateVault(password)
+	exists, err := m.vaultRepo.Exists()
 	if err != nil {
 		return err
 	}
-	// set default vault
-	m.vaultRepo.SetDefaultVault(defaultVault.ID)
+
+	if exists {
+		return nil
+	}
+
+	_, err = m.CreateVault(password)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

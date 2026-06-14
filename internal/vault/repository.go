@@ -9,8 +9,7 @@ type CredentialRepository interface {
 
 type VaultRepository interface {
 	SaveVault(vault LockedVault) error
-	GetVault(id VaultID) (*LockedVault, error)
-	GetDefaultVault() (VaultID, error)
-	SetDefaultVault(id VaultID) error
-	DeleteVault(id VaultID) error
+	Exists() (bool, error)
+	GetVault() (*LockedVault, error)
+	DeleteVault() error
 }
