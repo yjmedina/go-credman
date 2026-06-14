@@ -32,6 +32,11 @@ type EncryptedCredential struct {
 	UpdatedAt  time.Time
 }
 
+type NewCredential struct {
+	Name   string
+	Fields []Field
+}
+
 func serializeCredentials(creds Credentials) ([]byte, error) {
 	data, err := json.Marshal(creds)
 	if err != nil {

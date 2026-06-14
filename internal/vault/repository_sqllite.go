@@ -16,11 +16,12 @@ type SqlLiteRepository struct {
 
 func (r *SqlLiteRepository) SaveCredential(creds EncryptedCredential) error {
 	_, err := r.db.Exec(`
-	INSERT INTO credentials (id, vault_id, ciphertext, updated_at) 
-	VALUES (?, ?, ?, ?)
+	INSERT INTO credentials (id, vault_id, name, ciphertext, updated_at)
+	VALUES (?, ?, ?, ?, ?)
 		`,
 		creds.ID,
 		creds.VaultID,
+		creds.Name,
 		creds.ciphertext,
 		creds.UpdatedAt)
 
@@ -34,14 +35,14 @@ func (r *SqlLiteRepository) SaveCredential(creds EncryptedCredential) error {
 func (r *SqlLiteRepository) GetCredential(id CredentialID) (*EncryptedCredential, error) {
 	var creds EncryptedCredential
 	err := r.db.QueryRow(`
-	SELECT id, vault_id, ciphertext, updated_at
+	SELECT id, vault_id, name, ciphertext, updated_at
 	FROM credentials
 	WHERE id = ?
-
 	`,
 		id).Scan(
 		&creds.ID,
 		&creds.VaultID,
+		&creds.Name,
 		&creds.ciphertext,
 		&creds.UpdatedAt,
 	)
@@ -52,7 +53,60 @@ func (r *SqlLiteRepository) GetCredential(id CredentialID) (*EncryptedCredential
 		return nil, fmt.Errorf("getting credentials %s: %w", id, err)
 	}
 	return &creds, nil
+}
 
+func (r *SqlLiteRepository) GetCredentialByName(name string) (*EncryptedCredential, error) {
+	var creds EncryptedCredential
+	err := r.db.QueryRow(`
+	SELECT id, vault_id, name, ciphertext, updated_at
+	FROM credentials
+	WHERE name = ?
+	`,
+		name).Scan(
+		&creds.ID,
+		&creds.VaultID,
+		&creds.Name,
+		&creds.ciphertext,
+		&creds.UpdatedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("credentials does not exists %s: %w", name, err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("getting credentials %s: %w", name, err)
+	}
+	return &creds, nil
+}
+
+func (r *SqlLiteRepository) SearchCredentials(pattern string) ([]string, error) {
+	var query string
+	args := []any{}
+
+	if pattern != "" {
+		query = `SELECT name FROM credentials WHERE name LIKE ? ORDER BY name`
+		args = append(args, "%"+pattern+"%")
+	} else {
+		query = `SELECT name FROM credentials ORDER BY name`
+	}
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("searching credentials: %w", err)
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, fmt.Errorf("scanning credential name: %w", err)
+		}
+		names = append(names, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating credentials: %w", err)
+	}
+	return names, nil
 }
 
 func (r *SqlLiteRepository) UpdateCredential(creds EncryptedCredential) error {
@@ -178,7 +232,8 @@ func migrate(db *sql.DB) error {
 
 	CREATE TABLE IF NOT EXISTS credentials (
 		id         TEXT PRIMARY KEY,
-		vault_id TEXT NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,
+		vault_id   TEXT NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,
+		name       TEXT NOT NULL UNIQUE,
 		ciphertext BLOB NOT NULL,
 		updated_at DATETIME NOT NULL
 	);

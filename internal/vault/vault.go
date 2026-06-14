@@ -1,8 +1,19 @@
 package vault
 
-import "credman/internal/crypto"
+import (
+	"credman/internal/crypto"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type VaultID string
+
+func CredentialUUIDGenerator() CredentialID {
+	return CredentialID(uuid.New().String())
+}
 
 // LockedVault contains the encrypted Data Encryption Key (DEK) to encrypt data
 type LockedVault struct {
@@ -19,7 +30,40 @@ type UnlockedVault struct {
 	repository CredentialRepository
 }
 
-func (v *UnlockedVault) Save(creds Credentials) error {
+// validateName accepts ASCII letters, digits, and '-'. Empty or nil is rejected.
+func validateName(name *string) error {
+	if name == nil || *name == "" {
+		return errors.New("name is required")
+	}
+	for _, r := range *name {
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r >= 'A' && r <= 'Z':
+		case r >= '0' && r <= '9':
+		case r == '-':
+		default:
+			return fmt.Errorf("name contains invalid character %q (allowed: a-z, A-Z, 0-9, -)", r)
+		}
+	}
+	return nil
+}
+
+func (v *UnlockedVault) New(newCreds NewCredential) error {
+
+	err := validateName(&newCreds.Name)
+	if err != nil {
+		return err
+	}
+
+	creds := Credentials{
+		ID:        CredentialUUIDGenerator(),
+		VaultID:   v.ID,
+		Name:      newCreds.Name,
+		Fields:    newCreds.Fields,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
 	plaintext, err := serializeCredentials(creds)
 	if err != nil {
 		return err
