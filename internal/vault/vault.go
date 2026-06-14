@@ -33,6 +33,7 @@ func (v *UnlockedVault) Save(creds Credentials) error {
 
 	encryptedCreds := EncryptedCredential{
 		ID:         creds.ID,
+		Name:       creds.Name,
 		VaultID:    v.ID,
 		ciphertext: ciphertext,
 		UpdatedAt:  creds.UpdatedAt,

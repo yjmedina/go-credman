@@ -1,6 +1,10 @@
 package vault
 
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 type CredentialID string
 
@@ -14,7 +18,7 @@ type Field struct {
 type Credentials struct {
 	ID        CredentialID
 	VaultID   VaultID
-	Title     string
+	Name      string
 	Fields    []Field
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -23,14 +27,23 @@ type Credentials struct {
 type EncryptedCredential struct {
 	ID         CredentialID
 	VaultID    VaultID
+	Name       string
 	ciphertext []byte
 	UpdatedAt  time.Time
 }
 
 func serializeCredentials(creds Credentials) ([]byte, error) {
-	return nil, nil
+	data, err := json.Marshal(creds)
+	if err != nil {
+		return nil, fmt.Errorf("serialize credentials: %w", err)
+	}
+	return data, nil
 }
 
 func deserializeCredentials(data []byte) (*Credentials, error) {
-	return nil, nil
+	var creds Credentials
+	if err := json.Unmarshal(data, &creds); err != nil {
+		return nil, fmt.Errorf("deserialize credentials: %w", err)
+	}
+	return &creds, nil
 }
