@@ -48,18 +48,46 @@ func validateName(name *string) error {
 	return nil
 }
 
+// validateFieldName accepts ASCII letters, digits, '-', and '_'. Empty is rejected.
+func validateFieldName(name string) error {
+	if name == "" {
+		return errors.New("field name is required")
+	}
+	for _, r := range name {
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r >= 'A' && r <= 'Z':
+		case r >= '0' && r <= '9':
+		case r == '-' || r == '_':
+		default:
+			return fmt.Errorf("field name contains invalid character %q (allowed: a-z, A-Z, 0-9, -, _)", r)
+		}
+	}
+	return nil
+}
+
 func (v *UnlockedVault) New(newCreds NewCredential) (*Credentials, error) {
 
 	err := validateName(&newCreds.Name)
 	if err != nil {
 		return nil, err
 	}
+	fields := make(map[string]Field, len(newCreds.Fields))
+	for _, field := range newCreds.Fields {
+		if err := validateFieldName(field.Name); err != nil {
+			return nil, err
+		}
+		if _, exists := fields[field.Name]; exists {
+			return nil, fmt.Errorf("duplicate field name: %q", field.Name)
+		}
+		fields[field.Name] = Field{Value: field.Value, Sensitive: field.Sensitive}
+	}
 
 	creds := Credentials{
 		ID:        CredentialUUIDGenerator(),
 		VaultID:   v.ID,
 		Name:      newCreds.Name,
-		Fields:    newCreds.Fields,
+		Fields:    fields,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

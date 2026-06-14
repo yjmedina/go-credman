@@ -28,11 +28,6 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 
-			inlineFields, err := parseKVFields(vars)
-			if err != nil {
-				return err
-			}
-
 			pw, err := PromptPassword("Password: ")
 			if err != nil {
 				return err
@@ -42,18 +37,14 @@ Examples:
 				return err
 			}
 
-			secretFields, err := readSecretFields(secrets)
+			fields, err := parseVariablesAndSecrets(vars, secrets)
 			if err != nil {
 				return err
 			}
 
-			credFields := make([]vault.Field, 0, len(inlineFields)+len(secretFields))
-			credFields = append(credFields, inlineFields...)
-			credFields = append(credFields, secretFields...)
-
 			creds, err := v.New(vault.NewCredential{
 				Name:   name,
-				Fields: credFields,
+				Fields: fields,
 			})
 			if err != nil {
 				return err
@@ -70,36 +61,56 @@ Examples:
 	return cmd
 }
 
-func parseKVFields(raw []string) ([]vault.Field, error) {
-	out := make([]vault.Field, 0, len(raw))
-	for _, kv := range raw {
-		idx := strings.IndexByte(kv, '=')
-		if idx <= 0 {
-			return nil, fmt.Errorf("invalid field %q: expected key=value", kv)
-		}
-		out = append(out, vault.Field{
-			Name:  kv[:idx],
-			Value: kv[idx+1:],
-		})
+func parseVariable(kv string) (vault.NamedField, error) {
+	idx := strings.IndexByte(kv, '=')
+	if idx <= 0 {
+		return vault.NamedField{}, fmt.Errorf("invalid field %q: expected key=value", kv)
 	}
-	return out, nil
+	return vault.NamedField{
+		Name:      kv[:idx],
+		Value:     kv[idx+1:],
+		Sensitive: false,
+	}, nil
 }
 
-func readSecretFields(keys []string) ([]vault.Field, error) {
-	out := make([]vault.Field, 0, len(keys))
-	for _, key := range keys {
-		if key == "" {
-			return nil, fmt.Errorf("--secret requires a field name")
-		}
-		val, err := PromptPassword(fmt.Sprintf("Enter value for secret [%s]: ", key))
+func readSecretField(key string) (vault.NamedField, error) {
+	if key == "" {
+		return vault.NamedField{}, fmt.Errorf("--secret requires a field name")
+	}
+	val, err := PromptPassword(fmt.Sprintf("Enter value for secret [%s]: ", key))
+	if err != nil {
+		return vault.NamedField{}, err
+	}
+	return vault.NamedField{Name: key, Value: val, Sensitive: true}, nil
+}
+
+func parseVariablesAndSecrets(variables []string, secrets []string) ([]vault.NamedField, error) {
+	out := make([]vault.NamedField, 0, len(variables)+len(secrets))
+	seen := make(map[string]struct{}, len(variables)+len(secrets))
+
+	for _, variable := range variables {
+		field, err := parseVariable(variable)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, vault.Field{
-			Name:      key,
-			Value:     val,
-			Sensitive: true,
-		})
+		if _, dup := seen[field.Name]; dup {
+			return nil, fmt.Errorf("duplicate field name: %q", field.Name)
+		}
+		seen[field.Name] = struct{}{}
+		out = append(out, field)
 	}
+
+	for _, secret := range secrets {
+		if _, dup := seen[secret]; dup {
+			return nil, fmt.Errorf("duplicate field name: %q", secret)
+		}
+		field, err := readSecretField(secret)
+		if err != nil {
+			return nil, err
+		}
+		seen[field.Name] = struct{}{}
+		out = append(out, field)
+	}
+
 	return out, nil
 }

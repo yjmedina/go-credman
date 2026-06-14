@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func GetAddCmd(manager *vault.VaultManager) *cobra.Command {
+func NewGetCmd(manager *vault.VaultManager) *cobra.Command {
 	var (
 		showSecrets bool
 	)
@@ -40,12 +40,13 @@ Examples:
 
 			fmt.Fprintf(os.Stdout, "%s\n", creds.Name)
 
-			for _, field := range creds.Fields {
+			for _, name := range creds.GetFieldNames() {
+				field := creds.Fields[name]
 				value := field.Value
 				if field.Sensitive && !showSecrets {
 					value = "***********"
 				}
-				fmt.Fprintf(os.Stdout, "%s: %s\n", field.Name, value)
+				fmt.Fprintf(os.Stdout, "%s: %s\n", name, value)
 			}
 
 			return nil

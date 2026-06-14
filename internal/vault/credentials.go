@@ -3,12 +3,18 @@ package vault
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 )
 
 type CredentialID string
 
 type Field struct {
+	Value     string
+	Sensitive bool
+}
+
+type NamedField struct {
 	Name      string
 	Value     string
 	Sensitive bool
@@ -19,9 +25,18 @@ type Credentials struct {
 	ID        CredentialID
 	VaultID   VaultID
 	Name      string
-	Fields    []Field
+	Fields    map[string]Field
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+func (c *Credentials) GetFieldNames() []string {
+	names := make([]string, 0, len(c.Fields))
+	for name := range c.Fields {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 type EncryptedCredential struct {
@@ -34,7 +49,7 @@ type EncryptedCredential struct {
 
 type NewCredential struct {
 	Name   string
-	Fields []Field
+	Fields []NamedField
 }
 
 func serializeCredentials(creds Credentials) ([]byte, error) {
