@@ -133,6 +133,9 @@ func (v *UnlockedVault) Get(id CredentialID) (*Credentials, error) {
 }
 
 func (v *UnlockedVault) GetByName(name string) (*Credentials, error) {
+	if err := validateName(&name); err != nil {
+		return nil, err
+	}
 	encryptedCreds, err := v.repository.GetCredentialByName(name)
 	if err != nil {
 		return nil, err
@@ -147,6 +150,13 @@ func (v *UnlockedVault) GetByName(name string) (*Credentials, error) {
 
 func (v *UnlockedVault) Delete(id CredentialID) error {
 	return v.repository.DeleteCredential(id)
+}
+
+func (v *UnlockedVault) DeleteByName(name string) error {
+	if err := validateName(&name); err != nil {
+		return err
+	}
+	return v.repository.DeleteCredentialByName(name)
 }
 
 func (v *UnlockedVault) Update(id CredentialID, fields []Field) error {

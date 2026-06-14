@@ -148,6 +148,22 @@ func (r *SqlLiteRepository) DeleteCredential(id CredentialID) error {
 	return nil
 }
 
+func (r *SqlLiteRepository) DeleteCredentialByName(name string) error {
+	result, err := r.db.Exec(`DELETE FROM credentials WHERE name = ?`, name)
+	if err != nil {
+		return fmt.Errorf("deleting credential %s: %w", name, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("checking rows affected: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("credential %q not found", name)
+	}
+	return nil
+}
+
 func (r *SqlLiteRepository) SaveVault(vault LockedVault) error {
 	_, err := r.db.Exec(`
 	INSERT INTO vaults (id, wrapped_dek, salt, kdf_time, parallelism, memory) 

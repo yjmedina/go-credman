@@ -7,6 +7,7 @@ type CredentialRepository interface {
 	SearchCredentials(pattern string) ([]string, error)
 	UpdateCredential(creds EncryptedCredential) error
 	DeleteCredential(id CredentialID) error
+	DeleteCredentialByName(name string) error
 }
 
 type VaultRepository interface {
