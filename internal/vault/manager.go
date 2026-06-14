@@ -2,9 +2,16 @@ package vault
 
 import (
 	"credman/internal/crypto"
+	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type VaultIdGenerator func() VaultID
+
+func UUIDGenerator() VaultID {
+	return VaultID(uuid.New().String())
+}
 
 type VaultManager struct {
 	vaultRepo         VaultRepository
@@ -89,4 +96,25 @@ func (m *VaultManager) Init(password []byte) error {
 	// set default vault
 	m.vaultRepo.SetDefaultVault(defaultVault.ID)
 	return nil
+}
+
+func NewVaultManager() (*VaultManager, error) {
+	repo, err := NewSqlLiteRepository()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to init sql repository %e", err)
+	}
+
+	cipher := crypto.AESCipher{}
+
+	manager := VaultManager{
+		vaultRepo:         repo,
+		credRepo:          repo,
+		cipher:            &cipher,
+		keyDeriver:        crypto.Argon2KeyDeriver,
+		idGenerator:       UUIDGenerator,
+		kdfParamGenerator: crypto.DefaultKDFParamGenerator,
+	}
+
+	return &manager, nil
+
 }
