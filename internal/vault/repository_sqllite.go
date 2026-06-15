@@ -78,6 +78,15 @@ func (r *SqlLiteRepository) GetCredentialByName(name string) (*EncryptedCredenti
 	return &creds, nil
 }
 
+func (r *SqlLiteRepository) ExistsByName(name string) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM credentials WHERE name = ?)`, name).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("checking credential %q exists: %w", name, err)
+	}
+	return exists, nil
+}
+
 func (r *SqlLiteRepository) SearchCredentials(pattern string) ([]string, error) {
 	var query string
 	args := []any{}
@@ -112,9 +121,10 @@ func (r *SqlLiteRepository) SearchCredentials(pattern string) ([]string, error) 
 func (r *SqlLiteRepository) UpdateCredential(creds EncryptedCredential) error {
 	result, err := r.db.Exec(`
 	UPDATE credentials
-	SET ciphertext = ?, updated_at = ?
+	SET name = ?, ciphertext = ?, updated_at = ?
 	WHERE id = ?
 	`,
+		creds.Name,
 		creds.ciphertext,
 		creds.UpdatedAt,
 		creds.ID)

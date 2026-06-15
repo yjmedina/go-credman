@@ -66,6 +66,83 @@ func validateFieldName(name string) error {
 	return nil
 }
 
+func (v *UnlockedVault) Edit(editCreds EditCredential) (*Credentials, error) {
+	for _, d := range editCreds.Deletions {
+		for _, f := range editCreds.Fields {
+			if f.Name == d {
+				return nil, fmt.Errorf("field %q is both set and deleted", d)
+			}
+		}
+	}
+
+	creds, err := v.GetByName(editCreds.Name)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, field := range editCreds.Fields {
+		if err := validateFieldName(field.Name); err != nil {
+			return nil, err
+		}
+		creds.Fields[field.Name] = Field{Value: field.Value, Sensitive: field.Sensitive}
+	}
+
+	for _, name := range editCreds.Deletions {
+		if err := validateFieldName(name); err != nil {
+			return nil, err
+		}
+		if _, ok := creds.Fields[name]; !ok {
+			return nil, fmt.Errorf("field %q not found", name)
+		}
+		delete(creds.Fields, name)
+	}
+
+	if editCreds.NewName != "" && editCreds.NewName != creds.Name {
+		if err := validateName(&editCreds.NewName); err != nil {
+			return nil, err
+		}
+		if editCreds.NewName != creds.Name {
+			exists, err := v.repository.ExistsByName(editCreds.NewName)
+			if err != nil {
+				return nil, err
+			}
+			if exists {
+				return nil, fmt.Errorf("credential %q already exists", editCreds.NewName)
+			}
+		}
+		creds.Name = editCreds.NewName
+	}
+
+	creds.UpdatedAt = time.Now()
+
+	plaintext, err := serializeCredentials(creds)
+	if err != nil {
+		return nil, err
+	}
+
+	additionalData := []byte(creds.ID) // Using CredentialID as additional authenticated data
+	ciphertext, err := v.cipher.Seal(v.dek, plaintext, additionalData)
+	if err != nil {
+		return nil, err
+	}
+
+	encryptedCreds := EncryptedCredential{
+		ID:         creds.ID,
+		Name:       creds.Name,
+		VaultID:    v.ID,
+		ciphertext: ciphertext,
+		UpdatedAt:  creds.UpdatedAt,
+	}
+
+	err = v.repository.UpdateCredential(encryptedCreds)
+	if err != nil {
+		return nil, err
+	}
+
+	return creds, nil
+}
+
 func (v *UnlockedVault) New(newCreds NewCredential) (*Credentials, error) {
 
 	err := validateName(&newCreds.Name)
@@ -92,7 +169,7 @@ func (v *UnlockedVault) New(newCreds NewCredential) (*Credentials, error) {
 		UpdatedAt: time.Now(),
 	}
 
-	plaintext, err := serializeCredentials(creds)
+	plaintext, err := serializeCredentials(&creds)
 	if err != nil {
 		return nil, err
 	}

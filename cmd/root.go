@@ -29,6 +29,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	rootCmd.AddCommand(NewSearchCmd(manager))
 	rootCmd.AddCommand(NewGetCmd(manager))
 	rootCmd.AddCommand(NewDeleteCmd(manager))
+	rootCmd.AddCommand(NewEditCmd(manager))
 
 	return rootCmd, nil
 }

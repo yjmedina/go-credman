@@ -52,7 +52,14 @@ type NewCredential struct {
 	Fields []NamedField
 }
 
-func serializeCredentials(creds Credentials) ([]byte, error) {
+type EditCredential struct {
+	Name      string
+	NewName   string
+	Fields    []NamedField
+	Deletions []string
+}
+
+func serializeCredentials(creds *Credentials) ([]byte, error) {
 	data, err := json.Marshal(creds)
 	if err != nil {
 		return nil, fmt.Errorf("serialize credentials: %w", err)

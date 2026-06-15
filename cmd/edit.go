@@ -8,21 +8,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewAddCmd(manager *vault.VaultManager) *cobra.Command {
+func NewEditCmd(manager *vault.VaultManager) *cobra.Command {
 	var (
-		vars    []string
-		secrets []string
+		vars      []string
+		secrets   []string
+		deletions []string
+		rename    string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "add <name>",
-		Short: "Add a new credential",
-		Long: `Add a new credential to the vault.
+		Use:   "edit <name>",
+		Short: "Edit credential",
+		Long: `Edit credential in the vault.
 
 Examples:
-  credman add github -v user=alice -s password
-  credman add github -v user=alice -v url=https://github.com -s password
-  credman add api -v owner=team -s token -s backup_token`,
+  credman edit github -v user=alice
+  credman edit github -d old_field
+  credman edit github --rename github-personal`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
@@ -41,21 +43,25 @@ Examples:
 				return err
 			}
 
-			creds, err := v.New(vault.NewCredential{
-				Name:   name,
-				Fields: fields,
+			creds, err := v.Edit(vault.EditCredential{
+				Name:    name,
+				NewName: rename,
+				Fields:  fields,
+				Deletions: deletions,
 			})
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(os.Stderr, "Added credential %q\n", creds.Name)
+			fmt.Fprintf(os.Stderr, "Updated credential %q\n", creds.Name)
 			return nil
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&vars, "var", "v", nil, "Inline field key=value (repeatable)")
 	cmd.Flags().StringArrayVarP(&secrets, "secret", "s", nil, "Prompt for this field's value, hidden (repeatable)")
+	cmd.Flags().StringArrayVarP(&deletions, "delete", "d", nil, "Field name to delete (repeatable)")
+	cmd.Flags().StringVar(&rename, "rename", "", "Rename credential to this new name")
 
 	return cmd
 }
