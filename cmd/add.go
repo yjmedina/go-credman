@@ -16,8 +16,15 @@ func NewAddCmd(manager *vault.VaultManager) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "add <name>",
-		Short: "Add a new credential",
-		Long: `Add a new credential to the vault.
+		Short: "Add a new credential to the vault",
+		Long: `Add a new credential identified by <name>. The name must be unique
+within the vault.
+
+Fields are passed with repeatable flags:
+  -v key=value   plain field, value visible on the command line
+  -s key         secret field, value is prompted for and hidden
+
+A credential can have any combination of plain and secret fields.
 
 Examples:
   credman add github -v user=alice -s password

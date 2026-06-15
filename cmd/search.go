@@ -14,14 +14,20 @@ func NewSearchCmd(manager *vault.VaultManager) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "search <pattern>",
-		Short: "Search for credentials",
-		Long: `Search for credentials.
+		Use:   "search",
+		Short: "List credentials, optionally filtered by name",
+		Long: `List the names of credentials stored in the vault.
+
+With no flags, every credential is listed in alphabetical order.
+With -p/--pattern, only credentials whose name contains the given
+substring are returned (case-sensitive, no wildcards needed).
+
+Only names are returned — use "credman get <name>" to view fields.
 
 Examples:
   credman search
-  credman search -pattern -dev 
-  `,
+  credman search -p dev
+  credman search -p github`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pw, err := PromptPassword("password: ")
 			if err != nil {

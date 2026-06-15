@@ -15,11 +15,17 @@ func NewGetCmd(manager *vault.VaultManager) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "get <name>",
-		Short: "get credentials",
-		Long: `Get the values for a credential
+		Short: "Show the fields of a credential",
+		Long: `Print every field of the credential <name>, one per line, in
+"key: value" form.
+
+Sensitive fields are masked by default. Pass -s/--show to reveal them
+in plaintext — useful for piping into another tool, but be mindful of
+shell history and screen sharing.
 
 Examples:
   credman get github
+  credman get github -s
   credman get api-backend-dev`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

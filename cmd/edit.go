@@ -18,13 +18,25 @@ func NewEditCmd(manager *vault.VaultManager) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "edit <name>",
-		Short: "Edit credential",
-		Long: `Edit credential in the vault.
+		Short: "Modify, delete, or rename a credential's fields",
+		Long: `Edit the credential <name>. Any combination of the following can be
+applied in a single call:
+
+  -v key=value   set or replace a plain field
+  -s key         set or replace a secret field, prompted hidden
+  -d key         delete an existing field by name
+  --rename NAME  rename the credential itself
+
+It is an error to set and delete the same field name in one call, to
+delete a field that does not exist, or to rename to a name already
+used by another credential.
 
 Examples:
   credman edit github -v user=alice
+  credman edit github -s password
   credman edit github -d old_field
-  credman edit github --rename github-personal`,
+  credman edit github --rename github-personal
+  credman edit github -v user=alice -d old_field --rename github-personal`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
@@ -44,9 +56,9 @@ Examples:
 			}
 
 			creds, err := v.Edit(vault.EditCredential{
-				Name:    name,
-				NewName: rename,
-				Fields:  fields,
+				Name:      name,
+				NewName:   rename,
+				Fields:    fields,
 				Deletions: deletions,
 			})
 			if err != nil {

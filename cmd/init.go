@@ -12,8 +12,17 @@ func NewInitCmd(manager *vault.VaultManager) *cobra.Command {
 
 	var initCmd = &cobra.Command{
 		Use:   "init",
-		Short: "Init the Credential Manager Database",
-		Long:  "Run the setup of the database and create your first vault",
+		Short: "Create the vault and set the master password",
+		Long: `Initialize a new vault on this machine. You'll be prompted to choose
+and confirm a master password — this password is required to unlock the
+vault for every other command, so make sure it's something you'll
+remember. There is no recovery if it's lost.
+
+Run this once per machine. Running init when a vault already exists
+will fail.
+
+Examples:
+  credman init`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// init flow
 			pw, err := PromptNewPassword("New password: ", "Confirm: ")

@@ -12,12 +12,15 @@ func NewDeleteCmd(manager *vault.VaultManager) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "delete <name>",
-		Short: "delete credential",
-		Long: `Delete credential from the vault
+		Short: "Delete a credential from the vault",
+		Long: `Permanently remove the credential <name> from the vault, including
+all of its fields. This operation cannot be undone.
+
+If no credential with that name exists, the command exits with an error.
 
 Examples:
-  credman delete github 
-  credman delete api`,
+  credman delete github
+  credman delete api-backend-dev`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]

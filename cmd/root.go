@@ -12,9 +12,14 @@ import (
 func NewRootCommand() (*cobra.Command, error) {
 
 	var rootCmd = &cobra.Command{
-		Use:           "credman",
-		Short:         "CLI to manage your credentials",
-		Long:          `A CLI to keep your credentials in a single place and secure`,
+		Use:   "credman",
+		Short: "Manage local credentials in an encrypted vault",
+		Long: `Credman stores, retrieves, and edits credentials in a local vault
+encrypted with a master password.
+
+Every command (except "init") unlocks the vault by prompting for the
+master password. Run "credman init" once to create the vault before
+using any other command.`,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 	}
