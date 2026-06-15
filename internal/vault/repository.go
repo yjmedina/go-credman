@@ -5,7 +5,7 @@ type CredentialRepository interface {
 	GetCredential(id CredentialID) (*EncryptedCredential, error)
 	GetCredentialByName(name string) (*EncryptedCredential, error)
 	ExistsByName(name string) (bool, error)
-	SearchCredentials(pattern string) ([]string, error)
+	ListCredentialNames(pattern string) ([]string, error)
 	UpdateCredential(creds EncryptedCredential) error
 	DeleteCredential(id CredentialID) error
 	DeleteCredentialByName(name string) error

@@ -87,7 +87,7 @@ func (r *SqlLiteRepository) ExistsByName(name string) (bool, error) {
 	return exists, nil
 }
 
-func (r *SqlLiteRepository) SearchCredentials(pattern string) ([]string, error) {
+func (r *SqlLiteRepository) ListCredentialNames(pattern string) ([]string, error) {
 	var query string
 	args := []any{}
 
@@ -100,7 +100,7 @@ func (r *SqlLiteRepository) SearchCredentials(pattern string) ([]string, error) 
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("searching credentials: %w", err)
+		return nil, fmt.Errorf("listing credential names: %w", err)
 	}
 	defer rows.Close()
 

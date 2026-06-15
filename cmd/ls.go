@@ -8,13 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewSearchCmd(manager *vault.VaultManager) *cobra.Command {
+func NewLsCmd(manager *vault.VaultManager) *cobra.Command {
 	var (
 		pattern string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "search",
+		Use:   "ls",
 		Short: "List credentials, optionally filtered by name",
 		Long: `List the names of credentials stored in the vault.
 
@@ -25,9 +25,9 @@ substring are returned (case-sensitive, no wildcards needed).
 Only names are returned — use "credman get <name>" to view fields.
 
 Examples:
-  credman search
-  credman search -p dev
-  credman search -p github`,
+  credman ls
+  credman ls -p dev
+  credman ls -p github`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pw, err := PromptPassword("password: ")
 			if err != nil {
@@ -38,7 +38,7 @@ Examples:
 				return err
 			}
 
-			credentialNames, err := v.Search(pattern)
+			credentialNames, err := v.ListNames(pattern)
 			if err != nil {
 				return err
 			}

@@ -240,6 +240,6 @@ func (v *UnlockedVault) Update(id CredentialID, fields []Field) error {
 	return nil
 }
 
-func (v *UnlockedVault) Search(pattern string) ([]string, error) {
-	return v.repository.SearchCredentials(pattern)
+func (v *UnlockedVault) ListNames(pattern string) ([]string, error) {
+	return v.repository.ListCredentialNames(pattern)
 }

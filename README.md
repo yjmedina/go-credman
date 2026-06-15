@@ -30,7 +30,7 @@ From there:
 ```sh
 credman add <name>            # add a credential (see flags below)
 credman get <name>            # show a credential (secrets masked by default)
-credman search -p <pattern>   # list credential names matching a pattern
+credman ls -p <pattern>   # list credential names matching a pattern
 credman delete <name>         # remove a credential
 ```
 
@@ -61,11 +61,11 @@ credman get github            # sensitive fields shown as ***********
 credman get github -s         # reveal sensitive fields
 ```
 
-## Searching
+## Listing
 
 ```sh
-credman search -p dev         # names containing "dev"
-credman search                # all names (empty pattern)
+credman ls -p dev         # names containing "dev"
+credman ls                # all names (empty pattern)
 ```
 
 ## Deleting
@@ -86,6 +86,6 @@ To fully wipe credman, remove the binary and delete `~/.credman/`.
 ## Project layout
 
 - `main.go` — entry point.
-- `cmd/` — Cobra commands (`init`, `add`, `get`, `search`, `delete`).
+- `cmd/` — Cobra commands (`init`, `add`, `get`, `ls`, `delete`, `edit`).
 - `internal/vault/` — vault manager, encryption, persistence.
 - `install.sh` — build + install + uninstall helper.

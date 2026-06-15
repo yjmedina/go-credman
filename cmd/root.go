@@ -31,7 +31,7 @@ using any other command.`,
 
 	rootCmd.AddCommand(NewInitCmd(manager))
 	rootCmd.AddCommand(NewAddCmd(manager))
-	rootCmd.AddCommand(NewSearchCmd(manager))
+	rootCmd.AddCommand(NewLsCmd(manager))
 	rootCmd.AddCommand(NewGetCmd(manager))
 	rootCmd.AddCommand(NewDeleteCmd(manager))
 	rootCmd.AddCommand(NewEditCmd(manager))
