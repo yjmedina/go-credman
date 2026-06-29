@@ -22,7 +22,7 @@ type VaultManager struct {
 	kdfParamGenerator crypto.KDFParamGenerator
 }
 
-func (m *VaultManager) CreateVault(password []byte) (*LockedVault, error) {
+func (m *VaultManager) CreateVault(password []byte) (*vaultRecord, error) {
 	kdfParams := m.kdfParamGenerator()
 	wrappedDEK, err := crypto.GenerateNewKDF(password, kdfParams, m.keyDeriver, m.cipher)
 	if err != nil {
@@ -30,7 +30,7 @@ func (m *VaultManager) CreateVault(password []byte) (*LockedVault, error) {
 	}
 	vaultID := m.idGenerator()
 
-	vault := LockedVault{
+	vault := vaultRecord{
 		ID:         vaultID,
 		KDFParams:  kdfParams,
 		WrappedDEK: wrappedDEK,
@@ -45,25 +45,37 @@ func (m *VaultManager) CreateVault(password []byte) (*LockedVault, error) {
 
 }
 func (m *VaultManager) UnlockVault(password []byte) (*UnlockedVault, error) {
-	lockedVault, err := m.vaultRepo.GetVault()
+	vaultRecord, err := m.vaultRepo.GetVault()
 	if err != nil {
 		return nil, err
 	}
 
-	masterKey, err := m.keyDeriver(password, lockedVault.KDFParams)
+	masterKey, err := m.keyDeriver(password, vaultRecord.KDFParams)
 	if err != nil {
 		return nil, err
 	}
 
-	dek, err := m.cipher.Open(masterKey, lockedVault.WrappedDEK, nil)
+	dek, err := m.cipher.Open(masterKey, vaultRecord.WrappedDEK, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return &UnlockedVault{
-		ID:         lockedVault.ID,
+		ID:         vaultRecord.ID,
 		dek:        dek,
 		cipher:     m.cipher,
+		repository: m.credRepo,
+	}, nil
+}
+
+func (m *VaultManager) LockVault() (*LockedVault, error) {
+	vaultRecord, err := m.vaultRepo.GetVault()
+	if err != nil {
+		return nil, err
+	}
+
+	return &LockedVault{
+		ID:         vaultRecord.ID,
 		repository: m.credRepo,
 	}, nil
 }

@@ -174,7 +174,7 @@ func (r *SqlLiteRepository) DeleteCredentialByName(name string) error {
 	return nil
 }
 
-func (r *SqlLiteRepository) SaveVault(vault LockedVault) error {
+func (r *SqlLiteRepository) SaveVault(vault vaultRecord) error {
 	_, err := r.db.Exec(`
 	INSERT INTO vaults (id, wrapped_dek, salt, kdf_time, parallelism, memory) 
 	VALUES (?, ?, ?, ?, ?, ?)
@@ -205,8 +205,8 @@ func (r *SqlLiteRepository) Exists() (bool, error) {
 	return numRows > 0, nil
 }
 
-func (r *SqlLiteRepository) GetVault() (*LockedVault, error) {
-	var v LockedVault
+func (r *SqlLiteRepository) GetVault() (*vaultRecord, error) {
+	var v vaultRecord
 	err := r.db.QueryRow(`
 	SELECT id, wrapped_dek, salt, kdf_time, parallelism, memory
 	FROM vaults

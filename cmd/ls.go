@@ -29,11 +29,7 @@ Examples:
   credman ls -p dev
   credman ls -p github`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pw, err := PromptPassword("password: ")
-			if err != nil {
-				return err
-			}
-			v, err := manager.UnlockVault([]byte(pw))
+			v, err := manager.LockVault()
 			if err != nil {
 				return err
 			}
