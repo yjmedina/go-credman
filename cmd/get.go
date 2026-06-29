@@ -9,9 +9,6 @@ import (
 )
 
 func NewGetCmd(manager *vault.VaultManager) *cobra.Command {
-	var (
-		showSecrets bool
-	)
 
 	cmd := &cobra.Command{
 		Use:   "get <name>",
@@ -49,16 +46,11 @@ Examples:
 			for _, name := range creds.GetFieldNames() {
 				field := creds.Fields[name]
 				value := field.Value
-				if field.Sensitive && !showSecrets {
-					value = "***********"
-				}
 				fmt.Fprintf(os.Stdout, "%s: %s\n", name, value)
 			}
 
 			return nil
 		},
 	}
-
-	cmd.Flags().BoolVarP(&showSecrets, "show", "s", false, "show the value of senstive credentials")
 	return cmd
 }
